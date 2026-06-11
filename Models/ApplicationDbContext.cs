@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Data.Entity;
 
 namespace FurnitureFactory.Models
 {
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext() : base("FurnitureFactoryDB") { }
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options) { }
 
         public DbSet<Supplier> Suppliers { get; set; }
         public DbSet<MaterialCategory> MaterialCategories { get; set; }
@@ -15,43 +16,38 @@ namespace FurnitureFactory.Models
         public DbSet<SupplyItem> SupplyItems { get; set; }
         public DbSet<Employee> Employees { get; set; }
 
-        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Supply -> Supplier (без каскадного видалення)
             modelBuilder.Entity<Supply>()
                 .HasRequired(s => s.Supplier)
                 .WithMany(sup => sup.Supplies)
                 .HasForeignKey(s => s.SupplierId)
-                .WillCascadeOnDelete(false);
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Supply -> Contract (необов'язковий зв'язок)
             modelBuilder.Entity<Supply>()
-                .HasOptional(s => s.Contract)
+                .HasOne(s => s.Contract)
                 .WithMany(c => c.Supplies)
                 .HasForeignKey(s => s.ContractId)
-                .WillCascadeOnDelete(false);
+                .OnDelete(DeleteBehavior.SetNull);
 
-            // SupplyItem -> Supply
             modelBuilder.Entity<SupplyItem>()
-                .HasRequired(si => si.Supply)
+                .HasOne(si => si.Supply)
                 .WithMany(s => s.SupplyItems)
                 .HasForeignKey(si => si.SupplyId)
-                .WillCascadeOnDelete(true);
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // SupplyItem -> Material
             modelBuilder.Entity<SupplyItem>()
-                .HasRequired(si => si.Material)
+                .HasOne(si => si.Material)
                 .WithMany(m => m.SupplyItems)
                 .HasForeignKey(si => si.MaterialId)
-                .WillCascadeOnDelete(false);
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // TotalPrice — обчислювана властивість, не зберігається в БД
+            // Обчислювані властивості — не зберігаються в БД
             modelBuilder.Entity<SupplyItem>()
                 .Ignore(si => si.TotalPrice);
 
-            // Employee FullName — не зберігається в БД
             modelBuilder.Entity<Employee>()
                 .Ignore(e => e.FullName);
         }
