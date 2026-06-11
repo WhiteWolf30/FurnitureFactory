@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Data.Entity;
+using FurnitureFactory.Models;
 
 namespace FurnitureFactory.Models
 {
@@ -21,7 +21,7 @@ namespace FurnitureFactory.Models
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Supply>()
-                .HasRequired(s => s.Supplier)
+                .HasOne(s => s.Supplier)
                 .WithMany(sup => sup.Supplies)
                 .HasForeignKey(s => s.SupplierId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -44,7 +44,6 @@ namespace FurnitureFactory.Models
                 .HasForeignKey(si => si.MaterialId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Обчислювані властивості — не зберігаються в БД
             modelBuilder.Entity<SupplyItem>()
                 .Ignore(si => si.TotalPrice);
 
